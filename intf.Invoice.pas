@@ -1,10 +1,31 @@
+{
+License XRechnung-for-Delphi
+
+Copyright (C) 2022 Landrix Software GmbH & Co. KG
+Sven Harazim, info@landrix.de
+Version 1.4.0
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+}
+
 unit intf.Invoice;
 
 interface
 
 uses
   System.SysUtils,System.Classes,System.Types,System.DateUtils,System.Rtti
-  ,System.Variants,System.Generics.Collections
+  ,System.Variants,System.Generics.Collections,System.NetEncoding
   ;
 
 type
@@ -28,12 +49,71 @@ type
 
   {$region 'TInvoiceUnitCode'}
   TInvoiceUnitCode = (iuc_None //https://www.xrepository.de/details/urn:xoev-de:kosit:codeliste:rec20_1
-                      ,iuc_one
-                      ,iuc_piece
+                      ,iuc_one   //C62 A unit of count defining the number of pieces
+                      ,iuc_piece //H87
+                      ,iuc_number_of_articles
+                      ,iuc_set
+                      ,iuc_week
+                      ,iuc_month
+                      ,iuc_day
+                      ,iuc_tonne_metric_ton
+                      ,iuc_square_metre
+                      ,iuc_cubic_metre
+                      ,iuc_metre
+                      ,iuc_square_millimetre
+                      ,iuc_cubic_millimetre
+                      ,iuc_millimetre
+                      ,iuc_minute_unit_of_time
+                      ,iuc_second_unit_of_time
+                      ,iuc_litre
+                      ,iuc_hour
+                      ,iuc_kilogram
+                      ,iuc_kilometre
+                      ,iuc_kilowatt_hour
                       );
   //mehr Einheiten in Res\intf.Invoice.unusedUnits.pas
   {$endregion}
 
+  TInvoiceAttachmentType = (iat_application_None,
+                      iat_application_pdf,
+                      iat_image_png,
+                      iat_image_jpeg,
+                      iat_text_csv,
+                      iat_application_vnd_openxmlformats_officedocument_spreadsheetml_sheet,
+                      iat_application_vnd_oasis_opendocument_spreadsheet,
+                      iat_application_xml //ab XRechnung 2.0.0
+                      );
+
+  //Entweder externe Referenz oder eingebettetes Objekt
+  //Ob man die Daten als Base64 integriert oder separat mitliefert,
+  //haengt wahrscheinlich vom Empfaenger ab
+  TInvoiceAttachment = class(TObject)
+  public
+    ID : String;
+    DocumentDescription : String;
+    Filename : String;
+    AttachmentType : TInvoiceAttachmentType;
+    Data : TMemoryStream;         //https://docs.peppol.eu/poacc/billing/3.0/syntax/ubl-invoice/cac-AdditionalDocumentReference/cac-Attachment/cbc-EmbeddedDocumentBinaryObject/
+    ExternalReference : String;   //https://docs.peppol.eu/poacc/billing/3.0/syntax/ubl-invoice/cac-AdditionalDocumentReference/cac-Attachment/cac-ExternalReference/
+  public
+    constructor Create(_AttachmentType : TInvoiceAttachmentType);
+    destructor Destroy; override;
+    procedure EmbedDataFromStream(_Stream : TStream);
+    procedure EmbedDataFromFile(const _Filename : String);
+    function GetDataAsBase64 : String;
+    procedure SetDataFromBase64(const _Val : String);
+  end;
+
+  TInvoiceAttachmentList = class(TObjectList<TInvoiceAttachment>)
+  public
+    function AddAttachment(_AttachmentType : TInvoiceAttachmentType) : TInvoiceAttachment;
+    function TryAddAttachmentByExtension(const _Filename : String; out _Attachment : TInvoiceAttachment) : Boolean;
+  end;
+
+  TInvoiceUnitCodeHelper = class(TObject)
+  public
+    class function MapUnitOfMeasure(const _UnitOfMeasure : String; out _Success : Boolean; _DefaultOnFailure : TInvoiceUnitCode = TInvoiceUnitCode.iuc_piece) : TInvoiceUnitCode;
+  end;
 
   {$region 'TInvoiceAllowanceOrChargeIdentCode'}
   //cbc:ChargeIndicator = false dann sind folgende Code erlaubt 41 42 60 62 63 64 65 66 67 68 70 71 88 95 100 102 103 104
@@ -146,8 +226,25 @@ type
                         );
   {$endregion}
 
+  {$region 'TInvoiceSpecialServiceDescriptionCode'}
+  //cbc:ChargeIndicator = true
+  TInvoiceSpecialServiceDescriptionCode = (issdc_None, //https://www.xrepository.de/details/urn:xoev-de:kosit:codeliste:untdid.7161_2
+                        issdc_AAA_Telecommunication, //The service of providing telecommunication activities and/or faclities.
+                        issdc_ABK_Miscellaneous,	//Miscellaneous services.
+                        issdc_PC_Packing //The service of packing.
+                        );
+  {$endregion}
+
   {$region 'TInvoiceDutyTaxFeeCategoryCode'}
   //Nur ein Teil der Codes ist erlaubt
+  //Die Codes fuer die Umsatzsteuerkategorie sind Folgende:
+  //- S = Umsatzsteuer faellt mit Normalsatz an
+  //- Z = nach dem Nullsatz zu versteuernde Waren
+  //- E = Steuerbefreit
+  //- AE = Umkehrung der Steuerschuldnerschaft
+  //- K = Kein Ausweis der Umsatzsteuer bei innergemeinschaftlichen Lieferungen
+  //- G = Steuer nicht erhoben aufgrund von Export ausserhalb der EU
+  //Bei gewerblichen Endkunden im Reverse-Charge ist hier "AE" anzugeben.
   TInvoiceDutyTaxFeeCategoryCode = (idtfcc_None, //https://www.xrepository.de/details/urn:xoev-de:kosit:codeliste:untdid.5305_2
           //idtfcc_A_MixedTaxRate, //	Code specifying that the rate is based on mixed tax.
           //idtfcc_AA_LowerRate, //	Tax rate is lower than standard rate.
@@ -162,15 +259,35 @@ type
           //idtfcc_F_ValueAddedTaxVATMmarginSchemeSecondhandGoods, //	Indication that the VAT margin scheme for second-hand goods is applied.
           idtfcc_G_FreeExportItemTaxNotCharged, //	Code specifying that the item is free export and taxes are not charged.
           //idtfcc_H_HigherRate, //	Code specifying a higher rate of duty or tax or fee.
-          //idtfcc_I_ValueAddedTaxVATMarginSchemeWorksOfArt, // Margin scheme — Works of art	Indication that the VAT margin scheme for works of art is applied.
-          //idtfcc_J_ValueAddedTaxVATMarginSchemeCollectorsItemsAndAntiques, //	Indication that the VAT margin scheme for collector’s items and antiques is applied.
+          //idtfcc_I_ValueAddedTaxVATMarginSchemeWorksOfArt, // Margin scheme - Works of art	Indication that the VAT margin scheme for works of art is applied.
+          //idtfcc_J_ValueAddedTaxVATMarginSchemeCollectorsItemsAndAntiques, //	Indication that the VAT margin scheme for collector s items and antiques is applied.
           idtfcc_K_VATExemptForEEAIntracommunitySupplyOfGoodsAndServices, //	A tax category code indicating the item is VAT exempt due to an intra-community supply in the European Economic Area.
           idtfcc_L_CanaryIslandsGeneralIndirectTax, //	Impuesto General Indirecto Canario (IGIC) is an indirect tax levied on goods and services supplied in the Canary Islands (Spain) by traders and professionals, as well as on import of goods.
-          idtfcc_M_TaxForProductionServicesAndImportationInCeutaAndMelilla, //	Impuesto sobre la Producción, los Servicios y la Importación (IPSI) is an indirect municipal tax, levied on the production, processing and import of all kinds of movable tangible property, the supply of services and the transfer of immovable property located in the cities of Ceuta and Melilla.
-          idtfcc_O_ServicesOutsideScopeOfTax, //	Code specifying that taxes are not applicable to the services.
+          idtfcc_M_TaxForProductionServicesAndImportationInCeutaAndMelilla, //	Impuesto sobre la Produccion, los Servicios y la Importacion (IPSI) is an indirect municipal tax, levied on the production, processing and import of all kinds of movable tangible property, the supply of services and the transfer of immovable property located in the cities of Ceuta and Melilla.
+          //idtfcc_O_ServicesOutsideScopeOfTax, //	Code specifying that taxes are not applicable to the services.
           idtfcc_S_StandardRate, //	Code specifying the standard rate.
           idtfcc_Z_ZeroRatedGoods);
   {$endregion}
+
+  TInvoiceAllowanceCharge = class(TOBject)
+  public
+    ChargeIndicator : Boolean;
+    ReasonCodeAllowance : TInvoiceAllowanceOrChargeIdentCode;
+    ReasonCodeCharge : TInvoiceSpecialServiceDescriptionCode;
+    Reason : String;
+    BaseAmount : Currency;
+    MultiplierFactorNumeric : double;
+    Amount : Currency;
+    TaxPercent : double;
+    TaxCategory : TInvoiceDutyTaxFeeCategoryCode;
+  end;
+
+  TInvoiceAllowanceCharges = class(TObjectList<TInvoiceAllowanceCharge>)
+  public
+    function AddAllowanceCharge : TInvoiceAllowanceCharge;
+  end;
+
+  TInvoiceLines = class;
 
   TInvoiceLine = class(TObject)
   public
@@ -187,6 +304,11 @@ type
     BaseQuantity : Integer; //Preiseinheit
     BaseQuantityUnitCode : TInvoiceUnitCode; //Preiseinheit Mengeneinheit
     LineAmount : Currency;
+    AllowanceCharges : TInvoiceAllowanceCharges;
+    SubInvoiceLines : TInvoiceLines;
+  public
+    constructor Create;
+    destructor Destroy; override;
   end;
 
   TInvoiceLines = class(TObjectList<TInvoiceLine>)
@@ -199,22 +321,28 @@ type
     TaxAmount : Currency;
     TaxPercent : double;
     TaxCategory : TInvoiceDutyTaxFeeCategoryCode;
+    TaxExemptionReason : String; //sollte gesetzt werden bei TaxCategory = AE,E,O,Z
   end;
 
-  TInvoiceAllowanceCharge = class(TOBject)
-  public
-    ReasonCode : TInvoiceAllowanceOrChargeIdentCode;
-    Reason : String;
-    BaseAmount : Currency;
-    MultiplierFactorNumeric : double;
-    Amount : Currency;
-    TaxPercent : double;
-    TaxCategory : TInvoiceDutyTaxFeeCategoryCode;
-  end;
+  TInvoiceTaxAmountArray = TArray<TInvoiceTaxAmount>;
 
-  TInvoiceAllowanceCharges = class(TObjectList<TInvoiceAllowanceCharge>)
+  {$IF CompilerVersion >= 33.0}
+  TInvoiceTaxAmountArrayHelper = record helper for TInvoiceTaxAmountArray
   public
-    function AddAllowanceCharge : TInvoiceAllowanceCharge;
+    function AddTaxAmountIfTaxExists(_TaxPercent : double; _TaxableAmount,_TaxAmount : Currency) : Boolean;
+    procedure SetCapacity(_Capacity : Integer);
+  end;
+  {$ENDIF}
+
+  TInvoiceAddress = record
+  public
+    StreetName : String;
+    AdditionalStreetName : String;
+    City : String;
+    PostalZone : String;
+    CountrySubentity : String;
+    AddressLine : String;
+    CountryCode : String;
   end;
 
   TInvoiceAccountingParty = record
@@ -222,12 +350,10 @@ type
     Name : String;
     RegistrationName : String;
     CompanyID : String;
-    StreetName : String;
-    //TODO <cbc:AdditionalStreetName>01129</cbc:AdditionalStreetName>
-    City : String;
-    PostalZone : String;
-    //TODO <cbc:CountrySubentity>Sachsen</cbc:CountrySubentity>
-    CountryCode : String;
+
+    Address : TInvoiceAddress;
+
+    IdentifierSellerBuyer : String; //Kreditor-Nr AccountingSupplierParty / Debitor-Nr AccountingCustomerParty
 
     VATCompanyID : String;
 
@@ -236,25 +362,49 @@ type
     ContactElectronicMail : String;
   end;
 
+  TInvoiceDeliveryInformation = record
+  public
+    Name : String;
+    //LocationIdentifier : String; //optional Ein Bezeichner fuer den Ort, an den die Waren geliefert oder an dem die Dienstleistungen erbracht werden.
+    Address : TInvoiceAddress;
+    ActualDeliveryDate : TDate; //Lieferdatum
+  end;
+
+  TInvoicePrecedingInvoiceReference = class(TObject)
+  public
+    ID : String;
+    IssueDate : TDate;
+  end;
+
+  TInvoicePrecedingInvoiceReferences = class(TObjectList<TInvoicePrecedingInvoiceReference>)
+  public
+    function AddPrecedingInvoiceReference : TInvoicePrecedingInvoiceReference;
+    function IndexOfPrecedingInvoiceReference(const _ID : String) : Integer;
+  end;
+
   TInvoice = class(TObject)
   public
     InvoiceNumber : String;  //Rechnungsnummer
     InvoiceIssueDate : TDate; //Rechnungsdatum
-    InvoiceDueDate : TDate; //Fälligkeitsdatum
+    InvoiceDueDate : TDate; //Faelligkeitsdatum
     InvoicePeriodStartDate : TDate; //Leistungszeitraum Beginn
     InvoicePeriodEndDate : TDate; //Leistungszeitraum Ende
     InvoiceTypeCode : TInvoiceTypeCode;
-    InvoiceCurrencyCode : String;
-    TaxCurrencyCode : String;
-    BuyerReference : String; //Pflicht - Leitweg-ID - wird vom Rechnungsempfänger dem Rechnungsersteller zur Verfügung gestellt
+    InvoiceCurrencyCode : String; //EUR
+    TaxCurrencyCode : String;     //EUR
+    BuyerReference : String; //Pflicht - Leitweg-ID - wird vom Rechnungsempfaenger dem Rechnungsersteller zur Verfuegung gestellt
     Note : String; //Hinweise zur Rechnung allgemein
+    PurchaseOrderReference : String; //Bestellnummer oder Vertragsnummer des Kaeufers
+    ProjectReference : String;
+    ContractDocumentReference : String;
 
     AccountingSupplierParty : TInvoiceAccountingParty;
     AccountingCustomerParty : TInvoiceAccountingParty;
+    DeliveryInformation : TInvoiceDeliveryInformation;
 
     //TODO weitere Zahlungswege
     PaymentMeansCode : TInvoicePaymentMeansCode;
-    PaymentID : String; //Verwendungszweck der Überweisung, optional
+    PaymentID : String; //Verwendungszweck der Ueberweisung, optional
     PayeeFinancialAccount : String;
     PayeeFinancialAccountName : String;
     PayeeFinancialInstitutionBranch : String; //BIC
@@ -271,15 +421,20 @@ type
 
     InvoiceLines : TInvoiceLines;
 
-    AllowanceCharges : TInvoiceAllowanceCharges; //Nachlaesse
+    Attachments : TInvoiceAttachmentList;
+
+    AllowanceCharges : TInvoiceAllowanceCharges; //Nachlaesse, Zuschlaege
+    PrecedingInvoiceReferences : TInvoicePrecedingInvoiceReferences;
 
     TaxAmountTotal : Currency;
-    TaxAmountSubtotals : TArray<TInvoiceTaxAmount>;
+    TaxAmountSubtotals : TInvoiceTaxAmountArray;
 
     LineAmount : Currency;
     TaxExclusiveAmount : Currency;
     TaxInclusiveAmount : Currency;
     AllowanceTotalAmount : Currency;
+    ChargeTotalAmount : Currency;
+    PrepaidAmount : Currency;
     PayableAmount : Currency;
   public
     constructor Create;
@@ -294,14 +449,18 @@ implementation
 constructor TInvoice.Create;
 begin
   InvoiceLines := TInvoiceLines.Create;
+  Attachments := TInvoiceAttachmentList.Create;
   AllowanceCharges := TInvoiceAllowanceCharges.Create;
+  PrecedingInvoiceReferences := TInvoicePrecedingInvoiceReferences.Create;
   Clear;
 end;
 
 destructor TInvoice.Destroy;
 begin
   if Assigned(InvoiceLines) then begin InvoiceLines.Free; InvoiceLines := nil; end;
+  if Assigned(Attachments) then begin Attachments.Free; Attachments := nil; end;
   if Assigned(AllowanceCharges) then begin AllowanceCharges.Free; AllowanceCharges := nil; end;
+  if Assigned(PrecedingInvoiceReferences) then begin PrecedingInvoiceReferences.Free; PrecedingInvoiceReferences := nil; end;
   inherited;
 end;
 
@@ -309,7 +468,9 @@ procedure TInvoice.Clear;
 begin
   InvoiceLines.Clear;
   AllowanceCharges.Clear;
+  PrecedingInvoiceReferences.Clear;
   SetLength(TaxAmountSubtotals,0);
+  PaymentTermsType := iptt_None;
 end;
 
 { TInvoiceLines }
@@ -327,6 +488,312 @@ begin
   Result := TInvoiceAllowanceCharge.Create;
   Add(Result);
 end;
+
+{ TInvoicePrecedingInvoiceReferences }
+
+function TInvoicePrecedingInvoiceReferences.AddPrecedingInvoiceReference: TInvoicePrecedingInvoiceReference;
+begin
+  Result := TInvoicePrecedingInvoiceReference.Create;
+  Add(Result);
+end;
+
+function TInvoicePrecedingInvoiceReferences.IndexOfPrecedingInvoiceReference(
+  const _ID: String): Integer;
+var
+  i : Integer;
+begin
+  Result := -1;
+  for i := 0 to Count-1 do
+  if SameText(_ID,Items[i].ID) then
+  begin
+    Result := i;
+    break;
+  end;
+end;
+
+{ TInvoiceLine }
+
+constructor TInvoiceLine.Create;
+begin
+  AllowanceCharges := TInvoiceAllowanceCharges.Create;
+  SubInvoiceLines := TInvoiceLines.Create;
+end;
+
+destructor TInvoiceLine.Destroy;
+begin
+  if Assigned(AllowanceCharges) then begin AllowanceCharges.Free; AllowanceCharges := nil; end;
+  if Assigned(SubInvoiceLines) then begin SubInvoiceLines.Free; SubInvoiceLines := nil; end;
+  inherited;
+end;
+
+{ TInvoiceUnitCodeHelper }
+
+class function TInvoiceUnitCodeHelper.MapUnitOfMeasure(const _UnitOfMeasure: String; out _Success: Boolean;
+  _DefaultOnFailure: TInvoiceUnitCode): TInvoiceUnitCode;
+begin
+  Result := _DefaultOnFailure;
+  _Success := false;
+  if _UnitOfMeasure = '' then
+    exit;
+  if SameText(_UnitOfMeasure,'st') or
+     SameText(_UnitOfMeasure,'stk.') or
+     SameText(_UnitOfMeasure,'stk') then
+  begin
+    result := iuc_piece;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'mal') then
+  begin
+    result := iuc_one;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'std') or SameText(_UnitOfMeasure,'std.') then
+  begin
+    result := iuc_hour;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'tag') or SameText(_UnitOfMeasure,'tage') then
+  begin
+    result := iuc_day;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'monat') then
+  begin
+    result := iuc_month;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'woche') then
+  begin
+    result := iuc_week;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'kg') then
+  begin
+    result := iuc_kilogram;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'km') then
+  begin
+    result := iuc_kilometre;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'kwh') then
+  begin
+    result := iuc_kilowatt_hour;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'t') or SameText(_UnitOfMeasure,'tonne') then
+  begin
+    result := iuc_tonne_metric_ton;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'qm') then
+  begin
+    result := iuc_square_metre;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'qqm') then
+  begin
+    result := iuc_cubic_metre;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'m') then
+  begin
+    result := iuc_metre;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'mm') then
+  begin
+    result := iuc_millimetre;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'min') then
+  begin
+    result := iuc_minute_unit_of_time;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'sek') then
+  begin
+    result := iuc_second_unit_of_time;
+    _Success := true;
+    exit;
+  end;
+  if SameText(_UnitOfMeasure,'l') then
+  begin
+    result := iuc_litre;
+    _Success := true;
+    exit;
+  end;
+end;
+
+{ TInvoiceAttachment }
+
+constructor TInvoiceAttachment.Create(_AttachmentType: TInvoiceAttachmentType);
+begin
+  AttachmentType := _AttachmentType;
+  Data := TMemoryStream.Create;
+  ExternalReference := '';
+end;
+
+destructor TInvoiceAttachment.Destroy;
+begin
+  if Assigned(Data) then begin Data.Free; Data := nil; end;
+  inherited;
+end;
+
+procedure TInvoiceAttachment.EmbedDataFromFile(const _Filename: String);
+var
+  str : TFileStream;
+begin
+  if not FileExists(_Filename) then
+    exit;
+  str := TFileStream.Create(_Filename,fmOpenRead);
+  try
+    EmbedDataFromStream(str);
+  finally
+    str.Free;
+  end;
+end;
+
+procedure TInvoiceAttachment.EmbedDataFromStream(_Stream: TStream);
+begin
+  if _Stream = nil then
+    exit;
+  Data.Clear;
+  Data.LoadFromStream(_Stream);
+end;
+
+function TInvoiceAttachment.GetDataAsBase64: String;
+var
+  str : TMemoryStream;
+  base64 : System.NetEncoding.TBase64Encoding;
+  internalResult : AnsiString;
+begin
+  Result := '';
+  Data.Seek(0,soFromBeginning);
+  if Data.Size = 0 then
+    exit;
+  str := TMemoryStream.Create;
+  base64 := System.NetEncoding.TBase64Encoding.Create(0); // CharsPerLine = 0 means no line breaks
+  try
+    base64.Encode(Data,str);
+    str.Seek(0,soFromBeginning);
+    if str.Size = 0 then
+      exit;
+    SetLength(internalResult,str.Size);
+    str.Read(internalResult[1],str.Size);
+    Result := String(internalResult);
+  finally
+    base64.Free;
+    str.Free;
+  end;
+end;
+
+procedure TInvoiceAttachment.SetDataFromBase64(const _Val: String);
+var
+  str : TMemoryStream;
+  internalValue : AnsiString;
+begin
+  Data.Clear;
+  if _Val = '' then
+    exit;
+  internalValue := AnsiString(_Val);
+  str := TMemoryStream.Create;
+  try
+    str.Write(internalValue[1],Length(internalValue));
+    str.Seek(0,soFromBeginning);
+    System.NetEncoding.TBase64Encoding.Base64.Decode(str,Data);
+    Data.Seek(0,soFromBeginning);
+  finally
+    str.Free;
+  end;
+end;
+
+{ TInvoiceAttachmentList }
+
+function TInvoiceAttachmentList.AddAttachment(_AttachmentType: TInvoiceAttachmentType): TInvoiceAttachment;
+begin
+  Result := TInvoiceAttachment.Create(_AttachmentType);
+  Add(Result);
+end;
+
+function TInvoiceAttachmentList.TryAddAttachmentByExtension(const _Filename: String;
+  out _Attachment: TInvoiceAttachment): Boolean;
+var
+  fileExt : String;
+begin
+  Result := false;
+  if not FileExists(_Filename) then
+    exit;
+
+  fileExt := ExtractFileExt(_Filename);
+  if SameText(fileExt,'.xlsx') then
+    _Attachment := AddAttachment(iat_application_vnd_openxmlformats_officedocument_spreadsheetml_sheet)
+  else
+  if SameText(fileExt,'.ods') then
+    _Attachment := AddAttachment(iat_application_vnd_oasis_opendocument_spreadsheet)
+  else
+  if SameText(fileExt,'.csv') then
+    _Attachment := AddAttachment(iat_text_csv)
+  else
+  if SameText(fileExt,'.jpg') then
+    _Attachment := AddAttachment(iat_image_jpeg)
+  else
+  if SameText(fileExt,'.pdf') then
+    _Attachment := AddAttachment(iat_application_pdf)
+  else
+  if SameText(fileExt,'.png') then
+    _Attachment := AddAttachment(iat_image_png)
+  else
+  if SameText(fileExt,'.xml') then
+    _Attachment := AddAttachment(iat_application_xml)
+  else
+    exit;
+
+  Result := true;
+end;
+
+{$IF CompilerVersion >= 33.0}
+
+{ TInvoiceTaxAmountArrayHelper }
+
+function TInvoiceTaxAmountArrayHelper.AddTaxAmountIfTaxExists(
+  _TaxPercent: double; _TaxableAmount, _TaxAmount: Currency): Boolean;
+var
+  i : Integer;
+begin
+  Result := false;
+  for i := 0 to Length(self)-1 do
+  if self[i].TaxPercent = _TaxPercent then
+  begin
+    self[i].TaxableAmount := self[i].TaxableAmount + _TaxableAmount;
+    self[i].TaxAmount := self[i].TaxAmount + _TaxAmount;
+    Result := true;
+    break;
+  end;
+end;
+
+procedure TInvoiceTaxAmountArrayHelper.SetCapacity(_Capacity: Integer);
+begin
+  SetLength(self,_Capacity);
+end;
+
+{$ENDIF}
 
 end.
 

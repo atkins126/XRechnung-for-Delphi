@@ -26,13 +26,14 @@
 #*.obj
 #
 
-Dokumentation
+Documentation
 Samples/Win32
 Samples/Win64
-Tools/openxrechnungtoolbox
-Tools/validator
-Tools/validator-configuration-122
-Tools/validator-configuration-200
+SaxonHE-Unmanaged
+Distribution/validator
+Distribution/validator-configuration-220
+Distribution/visualization
+Distribution/java
 Schema
 
 # Delphi compiler-generated binaries (safe to delete)
@@ -73,3 +74,5 @@ __recovery/
 
 # Castalia statistics file (since XE7 Castalia is distributed with Delphi)
 *.stat
+
+*.rar

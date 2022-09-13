@@ -1,3 +1,23 @@
+{
+License XRechnung-for-Delphi
+
+Copyright (C) 2020 Landrix Software GmbH & Co. KG
+Sven Harazim, info@landrix.de
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+}
+
 unit intf.Invoice;
 
 interface
@@ -464,7 +484,6 @@ type
                       ,iuc_joule_per_gram
                       ,iuc_decare
                       ,iuc_ten_day
-                      ,iuc_day
                       ,iuc_dry_pound
                       ,iuc_degree_unit_of_angle
                       ,iuc_decade
@@ -923,7 +942,6 @@ type
                       ,iuc_hectometre
                       ,iuc_hectolitre_of_pure_alcohol
                       ,iuc_hertz
-                      ,iuc_hour
                       ,iuc_inch_pound_pound_inch
                       ,iuc_person
                       ,iuc_inch
@@ -1117,7 +1135,6 @@ type
                       ,iuc_kilogram_of_choline_chloride
                       ,iuc_kilogram_drained_net_weight
                       ,iuc_kelvin
-                      ,iuc_kilogram
                       ,iuc_kilogram_per_second
                       ,iuc_kilogram_of_hydrogen_peroxide
                       ,iuc_kilohertz
@@ -1133,7 +1150,6 @@ type
                       ,iuc_kilometre_per_hour
                       ,iuc_square_kilometre
                       ,iuc_kilogram_per_cubic_metre
-                      ,iuc_kilometre
                       ,iuc_kilogram_of_nitrogen
                       ,iuc_kilonewton_per_square_metre
                       ,iuc_kilogram_named_substance
@@ -1153,7 +1169,6 @@ type
                       ,iuc_kilovar
                       ,iuc_kilovolt
                       ,iuc_kilogram_per_millimetre
-                      ,iuc_kilowatt_hour
                       ,iuc_Kilowatt_hour_per_normalized_cubic_metre
                       ,iuc_kilogram_of_tungsten_trioxide
                       ,iuc_Kilowatt_hour_per_standard_cubic_metre
@@ -1263,7 +1278,6 @@ type
                       ,iuc_layer
                       ,iuc_lump_sum
                       ,iuc_ton_UK_or_long_ton_US
-                      ,iuc_litre
                       ,iuc_metric_ton_lubricating_oil
                       ,iuc_lumen
                       ,iuc_lux
@@ -1376,23 +1390,15 @@ type
                       ,iuc_megahertz
                       ,iuc_square_mile_statute_mile
                       ,iuc_thousand
-                      ,iuc_minute_unit_of_time
                       ,iuc_million
                       ,iuc_million_international_unit
                       ,iuc_milliard
                       ,iuc_millilitre
-                      ,iuc_square_millimetre
-                      ,iuc_cubic_millimetre
-                      ,iuc_millimetre
                       ,iuc_kilogram_dry_weight
-                      ,iuc_month
                       ,iuc_megapascal
                       ,iuc_cubic_metre_per_hour
                       ,iuc_cubic_metre_per_second
                       ,iuc_metre_per_second_squared
-                      ,iuc_square_metre
-                      ,iuc_cubic_metre
-                      ,iuc_metre
                       ,iuc_metre_per_second
                       ,iuc_megavolt_ampere
                       ,iuc_megawatt_hour_1000_kWh
@@ -1489,7 +1495,6 @@ type
                       ,iuc_volt_per_pascal
                       ,iuc_picovolt
                       ,iuc_milligram_per_kilogram
-                      ,iuc_number_of_articles
                       ,iuc_number_of_cells
                       ,iuc_newton
                       ,iuc_message
@@ -1678,8 +1683,6 @@ type
                       ,iuc_half_year_6_months
                       ,iuc_score
                       ,iuc_scruple
-                      ,iuc_second_unit_of_time
-                      ,iuc_set
                       ,iuc_segment
                       ,iuc_siemens
                       ,iuc_Standard_cubic_metre
@@ -1705,7 +1708,6 @@ type
                       ,iuc_metric_ton_including_inner_packaging
                       ,iuc_tonne_kilometre
                       ,iuc_kilogram_of_imported_meat_less_offal
-                      ,iuc_tonne_metric_ton
                       ,iuc_ten_pack
                       ,iuc_teeth_per_inch
                       ,iuc_ten_pair
@@ -1726,7 +1728,6 @@ type
                       ,iuc_cord
                       ,iuc_wet_ton
                       ,iuc_weber
-                      ,iuc_week
                       ,iuc_wine_gallon
                       ,iuc_watt_hour
                       ,iuc_working_month
