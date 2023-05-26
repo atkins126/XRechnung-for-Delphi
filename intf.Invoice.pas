@@ -1,9 +1,9 @@
 {
 License XRechnung-for-Delphi
 
-Copyright (C) 2022 Landrix Software GmbH & Co. KG
+Copyright (C) 2023 Landrix Software GmbH & Co. KG
 Sven Harazim, info@landrix.de
-Version 1.4.0
+Version 2.3.1
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -360,6 +360,7 @@ type
     ContactName : String;
     ContactTelephone : String;
     ContactElectronicMail : String;
+    ElectronicAddressSellerBuyer : String; //BT-34, BT-49
   end;
 
   TInvoiceDeliveryInformation = record
@@ -533,11 +534,16 @@ class function TInvoiceUnitCodeHelper.MapUnitOfMeasure(const _UnitOfMeasure: Str
 begin
   Result := _DefaultOnFailure;
   _Success := false;
-  if _UnitOfMeasure = '' then
+  if Trim(_UnitOfMeasure) = '' then
+  begin
+    _Success := true;
     exit;
+  end;
   if SameText(_UnitOfMeasure,'st') or
      SameText(_UnitOfMeasure,'stk.') or
-     SameText(_UnitOfMeasure,'stk') then
+     SameText(_UnitOfMeasure,'stk') or
+     SameText(_UnitOfMeasure,'stck') or
+     SameText(_UnitOfMeasure,'psch') then
   begin
     result := iuc_piece;
     _Success := true;
@@ -597,7 +603,8 @@ begin
     _Success := true;
     exit;
   end;
-  if SameText(_UnitOfMeasure,'qm') then
+  if SameText(_UnitOfMeasure,'qm') or
+     SameText(_UnitOfMeasure,'m2') then
   begin
     result := iuc_square_metre;
     _Success := true;

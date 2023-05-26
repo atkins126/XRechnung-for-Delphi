@@ -1,4 +1,16 @@
-﻿unit XRechnungUnit1;
+﻿{
+Copyright (C) 2023 Landrix Software GmbH & Co. KG
+Sven Harazim, info@landrix.de
+Version 2.3.1
+
+License
+This file is not official part of the package XRechnung-for-Delphi.
+
+This is provided as is, expressly without a warranty of any kind.
+You use it at your own risc.
+}
+
+unit XRechnungUnit1;
 
 interface
 
@@ -31,18 +43,22 @@ type
     rbFormat: TRadioGroup;
     Button2: TButton;
     Panel1: TPanel;
+    Button3: TButton;
+    Button5: TButton;
     procedure btCreateInvoiceClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure btX2ConvertHTMLClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
   private
-    procedure Generate220(inv : TInvoice);
+    procedure Generate231(inv : TInvoice);
   public
     JavaRuntimeEnvironmentPath : String;
     ValidatorLibPath : String;
-    ValidatorConfiguration220Path : String;
+    ValidatorConfigurationPath : String;
     VisualizationLibPath : String;
   end;
 
@@ -63,7 +79,7 @@ begin
   hstr := ExtractFileDir(hstr)+PathDelim+'Distribution'+PathDelim;
   JavaRuntimeEnvironmentPath := hstr +'java'+PathDelim;
   ValidatorLibPath := hstr +'validator'+PathDelim;
-  ValidatorConfiguration220Path := hstr +'validator-configuration-220'+PathDelim;
+  ValidatorConfigurationPath := hstr +'validator-configuration'+PathDelim;
   VisualizationLibPath := hstr +'visualization'+PathDelim;
   Width := 50;
   Top := 50;
@@ -104,6 +120,11 @@ begin
   inv.AccountingSupplierParty.ContactName := 'Meier';
   inv.AccountingSupplierParty.ContactTelephone := '030 0815';
   inv.AccountingSupplierParty.ContactElectronicMail := 'meier@company.com';
+  //BT-34 Gibt die elektronische Adresse des Verkäufers an, an die die Antwort auf eine Rechnung gesendet werden kann.
+  //Aktuell nur Unterstuetzung fuer schemeID=EM ElectronicMail
+  //Weitere Codes auf Anfrage
+  //https://www.xrepository.de/details/urn:xoev-de:kosit:codeliste:eas_4#version
+  inv.AccountingSupplierParty.ElectronicAddressSellerBuyer := 'antwortaufrechnung@company.com';
 
   inv.AccountingCustomerParty.Name := 'Kaeufername';
   inv.AccountingCustomerParty.RegistrationName := 'Kaeufername'; //Sollte ausgefüllt werden
@@ -116,6 +137,7 @@ begin
   inv.AccountingCustomerParty.ContactName := 'Müller';
   inv.AccountingCustomerParty.ContactTelephone := '030 1508';
   inv.AccountingCustomerParty.ContactElectronicMail := 'mueller@kunde.de';
+  inv.AccountingCustomerParty.ElectronicAddressSellerBuyer := 'antwortaufrechnung@kunde.de'; //BT-49
 
   inv.PaymentMeansCode := ipmc_SEPACreditTransfer; //Ueberweisung
   inv.PaymentID := 'Verwendungszweck der Ueberweisung...R2020-0815';
@@ -160,7 +182,7 @@ begin
   inv.PayableAmount := 200.00;      //Summe Zahlbar MwSt
 
   try
-    Generate220(inv);
+    Generate231(inv);
   finally
     inv.Free;
   end;
@@ -184,6 +206,40 @@ begin
   finally
     od.Free;
     inv.Free;
+  end;
+end;
+
+procedure TForm1.Button3Click(Sender: TObject);
+var
+  od : TOpenDialog;
+  cmdoutput,xmlresult,htmlresult : String;
+  Doc : Variant;
+begin
+  btX2ConvertHTML.Visible := false;
+  WebBrowser2.Navigate2('about:blank');
+
+  od := TOpenDialog.Create(nil);
+  try
+    if not od.Execute then
+      exit;
+
+    GetXRechnungValidationHelperJava.SetJavaRuntimeEnvironmentPath(JavaRuntimeEnvironmentPath)
+        .SetValidatorLibPath(ValidatorLibPath)
+        .SetValidatorConfigurationPath(ValidatorConfigurationPath)
+        .ValidateFile(od.FileName,cmdoutput,xmlresult,htmlresult);
+
+    Memo3.Lines.Text := cmdoutput;
+
+    Doc := WebBrowser2.Document;
+    Doc.Clear;
+    if htmlresult <> '' then
+      Doc.Write(htmlresult)
+    else
+      Doc.Write('<html><body>Validation nicht erfolgreich. Siehe Verzeichnis ./Distribution/Read.Me</body></html>');
+    Doc.Close;
+
+  finally
+    od.Free;
   end;
 end;
 
@@ -226,6 +282,11 @@ begin
   inv.AccountingSupplierParty.ContactName := 'Meier';
   inv.AccountingSupplierParty.ContactTelephone := '030 0815';
   inv.AccountingSupplierParty.ContactElectronicMail := 'meier@company.com';
+  //BT-34 Gibt die elektronische Adresse des Verkäufers an, an die die Antwort auf eine Rechnung gesendet werden kann.
+  //Aktuell nur Unterstuetzung fuer schemeID=EM ElectronicMail
+  //Weitere Codes auf Anfrage
+  //https://www.xrepository.de/details/urn:xoev-de:kosit:codeliste:eas_4#version
+  inv.AccountingSupplierParty.ElectronicAddressSellerBuyer := 'antwortaufrechnung@company.com';
 
   inv.AccountingCustomerParty.Name := 'Kaeufername';
   inv.AccountingCustomerParty.RegistrationName := 'Kaeufername'; //Sollte ausgefüllt werden
@@ -238,6 +299,7 @@ begin
   inv.AccountingCustomerParty.ContactName := 'Müller';
   inv.AccountingCustomerParty.ContactTelephone := '030 1508';
   inv.AccountingCustomerParty.ContactElectronicMail := 'mueller@kunde.de';
+  inv.AccountingCustomerParty.ElectronicAddressSellerBuyer := 'antwortaufrechnung@kunde.de'; //BT-49
 
   //Eine Gruppe von Informationselementen, die Informationen über die Anschrift liefern, an die
   //die Waren geliefert oder an der die Dienstleistungen erbracht werden. Die Gruppe ist nur zu
@@ -507,7 +569,7 @@ begin
 
   //TODO PayableRoundingAmount
   try
-    Generate220(inv);
+    Generate231(inv);
   finally
     inv.Free;
   end;
@@ -548,6 +610,11 @@ begin
   inv.AccountingSupplierParty.ContactName := 'Meier';
   inv.AccountingSupplierParty.ContactTelephone := '030 0815';
   inv.AccountingSupplierParty.ContactElectronicMail := 'meier@company.com';
+  //BT-34 Gibt die elektronische Adresse des Verkäufers an, an die die Antwort auf eine Rechnung gesendet werden kann.
+  //Aktuell nur Unterstuetzung fuer schemeID=EM ElectronicMail
+  //Weitere Codes auf Anfrage
+  //https://www.xrepository.de/details/urn:xoev-de:kosit:codeliste:eas_4#version
+  inv.AccountingSupplierParty.ElectronicAddressSellerBuyer := 'antwortaufrechnung@company.com';
 
   inv.AccountingCustomerParty.Name := 'Kaeufername';
   inv.AccountingCustomerParty.RegistrationName := 'Kaeufername'; //Sollte ausgefüllt werden
@@ -560,6 +627,7 @@ begin
   inv.AccountingCustomerParty.ContactName := 'Müller';
   inv.AccountingCustomerParty.ContactTelephone := '030 1508';
   inv.AccountingCustomerParty.ContactElectronicMail := 'mueller@kunde.de';
+  inv.AccountingCustomerParty.ElectronicAddressSellerBuyer := 'antwortaufrechnung@kunde.de'; //BT-49
 
   inv.PaymentMeansCode := ipmc_SEPACreditTransfer; //Ueberweisung
   inv.PaymentID := 'Verwendungszweck der Ueberweisung...R2020-0815';
@@ -644,13 +712,47 @@ begin
   inv.PayableAmount := 428.40;      //Summe Zahlbar MwSt
 
   try
-    Generate220(inv);
+    Generate231(inv);
   finally
     inv.Free;
   end;
 end;
 
-procedure TForm1.Generate220(inv: TInvoice);
+procedure TForm1.Button5Click(Sender: TObject);
+var
+  od : TOpenDialog;
+  cmdoutput,xmlresult,htmlresult : String;
+  Doc : Variant;
+begin
+  btX2ConvertHTML.Visible := false;
+  WebBrowser2.Navigate2('about:blank');
+
+  od := TOpenDialog.Create(nil);
+  try
+    if not od.Execute then
+      exit;
+
+
+    GetXRechnungValidationHelperJava.SetJavaRuntimeEnvironmentPath(JavaRuntimeEnvironmentPath)
+        .SetValidatorLibPath(ValidatorLibPath)
+        .SetVisualizationLibPath(VisualizationLibPath)
+        .VisualizeFile(od.FileName, (TXRechnungValidationHelper.GetXRechnungVersion(od.FileName) in [XRechnungVersion_220_UBL,XRechnungVersion_230_UBL]),cmdoutput,htmlresult);
+
+    Memo3.Lines.Text := cmdoutput;
+
+    Doc := WebBrowser2.Document;
+    Doc.Clear;
+    if htmlresult <> '' then
+      Doc.Write(htmlresult)
+    else
+      Doc.Write('<html><body>Visualisierung nicht erfolgreich. Siehe Verzeichnis ./Distribution/Read.Me</body></html>');
+    Doc.Close;
+  finally
+    od.Free;
+  end;
+end;
+
+procedure TForm1.Generate231(inv: TInvoice);
 var
   xml,cmdoutput,xmlresult,htmlresult,error : String;
   Doc : Variant;
@@ -659,11 +761,11 @@ begin
   Memo3.Clear;
   if rbFormat.itemindex = 0 then
   begin
-    TXRechnungInvoiceAdapter.SaveToXMLStr(inv,XRechnungVersion_220_UBL,xml);
+    TXRechnungInvoiceAdapter.SaveToXMLStr(inv,XRechnungVersion_230_UBL,xml);
 
     GetXRechnungValidationHelperJava.SetJavaRuntimeEnvironmentPath(JavaRuntimeEnvironmentPath)
         .SetValidatorLibPath(ValidatorLibPath)
-        .SetValidatorConfigurationPath(ValidatorConfiguration220Path)
+        .SetValidatorConfigurationPath(ValidatorConfigurationPath)
         .Validate(xml,cmdoutput,xmlresult,htmlresult);
 
     Memo3.Lines.Text := cmdoutput;
@@ -677,7 +779,7 @@ begin
     Doc.Close;
 
     Memo2.Lines.Text := xml;
-    Memo2.Lines.SaveToFile(ExtractFilePath(Application.ExeName)+'XRechnung-UBL-220.xml',TEncoding.UTF8);
+    Memo2.Lines.SaveToFile(ExtractFilePath(Application.ExeName)+'XRechnung-UBL-230.xml',TEncoding.UTF8);
 
     invtest := TInvoice.Create;
     try
@@ -692,11 +794,11 @@ begin
   end
   else
   begin
-    TXRechnungInvoiceAdapter.SaveToXMLStr(inv,XRechnungVersion_220_UNCEFACT,xml);
+    TXRechnungInvoiceAdapter.SaveToXMLStr(inv,XRechnungVersion_230_UNCEFACT,xml);
 
     GetXRechnungValidationHelperJava.SetJavaRuntimeEnvironmentPath(JavaRuntimeEnvironmentPath)
         .SetValidatorLibPath(ValidatorLibPath)
-        .SetValidatorConfigurationPath(ValidatorConfiguration220Path)
+        .SetValidatorConfigurationPath(ValidatorConfigurationPath)
         .Validate(xml,cmdoutput,xmlresult,htmlresult);
 
     Memo3.Lines.Text := cmdoutput;
@@ -710,7 +812,7 @@ begin
     Doc.Close;
 
     Memo2.Lines.Text := xml;
-    Memo2.Lines.SaveToFile(ExtractFilePath(Application.ExeName)+'XRechnung-UNCEFACT-220.xml',TEncoding.UTF8);
+    Memo2.Lines.SaveToFile(ExtractFilePath(Application.ExeName)+'XRechnung-UNCEFACT-230.xml',TEncoding.UTF8);
 
     invtest := TInvoice.Create;
     try

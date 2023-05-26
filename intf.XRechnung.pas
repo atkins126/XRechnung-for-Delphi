@@ -1,9 +1,9 @@
 {
 License XRechnung-for-Delphi
 
-Copyright (C) 2022 Landrix Software GmbH & Co. KG
+Copyright (C) 2023 Landrix Software GmbH & Co. KG
 Sven Harazim, info@landrix.de
-Version 1.4.0
+Version 2.3.1
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -75,7 +75,9 @@ type
 
   TXRechnungVersion = (XRechnungVersion_Unknown,
                        XRechnungVersion_220_UBL,
+                       XRechnungVersion_230_UBL,
                        XRechnungVersion_220_UNCEFACT,
+                       XRechnungVersion_230_UNCEFACT,
                        XRechnungVersion_ReadingSupport_ZUGFeRDFacturX_2xx);
 
   TXRechnungValidationHelper = class(TObject)
@@ -251,6 +253,12 @@ begin
 
 //  with xRoot.AddChild('cac:AccountingSupplierParty').AddChild('cac:Party') do
 //  begin
+//    if _Invoice.AccountingSupplierParty.ElectronicAddressSellerBuyer <> '' then
+//    with AddChild('cbc:EndpointID') do
+//    begin
+//      Attributes['schemeID'] := 'EM';
+//      Text := _Invoice.AccountingSupplierParty.ElectronicAddressSellerBuyer;
+//    end;
 //    if _Invoice.AccountingSupplierParty.IdentifierSellerBuyer <> '' then
 //    with AddChild('cac:PartyIdentification') do
 //    begin
@@ -294,6 +302,12 @@ begin
 //
 //  with xRoot.AddChild('cac:AccountingCustomerParty').AddChild('cac:Party') do
 //  begin
+//    if _Invoice.AccountingCustomerParty.ElectronicAddressSellerBuyer <> '' then
+//    with AddChild('cbc:EndpointID') do
+//    begin
+//      Attributes['schemeID'] := 'EM';
+//      Text := _Invoice.AccountingCustomerParty.ElectronicAddressSellerBuyer;
+//    end;
 //    if _Invoice.AccountingCustomerParty.IdentifierSellerBuyer <> '' then
 //    with AddChild('cac:PartyIdentification') do
 //    begin
@@ -968,8 +982,10 @@ begin
   try
     xml.LoadFromFile(_Filename);
     case TXRechnungValidationHelper.GetXRechnungVersion(xml) of
-      XRechnungVersion_220_UBL      : Result := LoadDocumentUBL(_Invoice,XRechnungVersion_220_UBL,xml,_Error);
+      XRechnungVersion_220_UBL,
+      XRechnungVersion_230_UBL      : Result := LoadDocumentUBL(_Invoice,XRechnungVersion_220_UBL,xml,_Error);
       XRechnungVersion_220_UNCEFACT,
+      XRechnungVersion_230_UNCEFACT,
       XRechnungVersion_ReadingSupport_ZUGFeRDFacturX_2xx : Result := LoadDocumentUNCEFACT(_Invoice,xml,_Error);
       else exit;
     end;
@@ -993,8 +1009,10 @@ begin
   try
     xml.LoadFromStream(_Stream);
     case TXRechnungValidationHelper.GetXRechnungVersion(xml) of
-      XRechnungVersion_220_UBL      : Result := LoadDocumentUBL(_Invoice,XRechnungVersion_220_UBL,xml,_Error);
+      XRechnungVersion_220_UBL,
+      XRechnungVersion_230_UBL      : Result := LoadDocumentUBL(_Invoice,XRechnungVersion_220_UBL,xml,_Error);
       XRechnungVersion_220_UNCEFACT,
+      XRechnungVersion_230_UNCEFACT,
       XRechnungVersion_ReadingSupport_ZUGFeRDFacturX_2xx : Result := LoadDocumentUNCEFACT(_Invoice,xml,_Error);
       else exit;
     end;
@@ -1018,8 +1036,10 @@ begin
   try
     xml.LoadFromXML(_XML);
     case TXRechnungValidationHelper.GetXRechnungVersion(xml) of
-      XRechnungVersion_220_UBL      : Result := LoadDocumentUBL(_Invoice,XRechnungVersion_220_UBL,xml,_Error);
+      XRechnungVersion_220_UBL,
+      XRechnungVersion_230_UBL      : Result := LoadDocumentUBL(_Invoice,XRechnungVersion_220_UBL,xml,_Error);
       XRechnungVersion_220_UNCEFACT,
+      XRechnungVersion_230_UNCEFACT,
       XRechnungVersion_ReadingSupport_ZUGFeRDFacturX_2xx : Result := LoadDocumentUNCEFACT(_Invoice,xml,_Error);
       else exit;
     end;
@@ -1032,8 +1052,10 @@ class procedure TXRechnungInvoiceAdapter.SaveDocument(_Invoice: TInvoice;
   _Version : TXRechnungVersion; _Xml: IXMLDocument);
 begin
   case _Version of
-    XRechnungVersion_220_UBL : SaveDocumentUBL(_Invoice,_Version,_Xml);
-    XRechnungVersion_220_UNCEFACT : SaveDocumentUNCEFACT(_Invoice,_Xml);
+    XRechnungVersion_220_UBL,
+    XRechnungVersion_230_UBL : SaveDocumentUBL(_Invoice,_Version,_Xml);
+    XRechnungVersion_220_UNCEFACT,
+    XRechnungVersion_230_UNCEFACT : SaveDocumentUNCEFACT(_Invoice,_Xml);
     else raise Exception.Create('XRechnung - wrong version');
   end;
 end;
@@ -1140,7 +1162,7 @@ var
         Text := IntToStr(_Invoiceline.BaseQuantity);
       end;
     end;
-    //if _Version = XRechnungVersion_220_UBL then
+    //if _Version in [XRechnungVersion_220_UBL,XRechnungVersion_230_UBL] then
     for subinvoiceline in _Invoiceline.SubInvoiceLines do
       InternalAddInvoiceLine(subinvoiceline,_Node.AddChild('cac:SubInvoiceLine'));
   end;
@@ -1163,8 +1185,8 @@ begin
   xRoot.DeclareNamespace('cac','urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
   xRoot.DeclareNamespace('cbc','urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
 
-  xRoot.AddChild('cbc:CustomizationID').Text := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.2'+
-       IfThen(InternalExtensionEnabled,'#conformant#urn:xoev-de:kosit:extension:xrechnung_2.2','');
+  xRoot.AddChild('cbc:CustomizationID').Text := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3'+
+       IfThen(InternalExtensionEnabled,'#conformant#urn:xoev-de:kosit:extension:xrechnung_2.3','');
 
   xRoot.AddChild('cbc:ID').Text := _Invoice.InvoiceNumber;
   xRoot.AddChild('cbc:IssueDate').Text := TXRechnungHelper.DateToStrUBLFormat(_Invoice.InvoiceIssueDate);
@@ -1220,6 +1242,12 @@ begin
 
   with xRoot.AddChild('cac:AccountingSupplierParty').AddChild('cac:Party') do
   begin
+    if _Invoice.AccountingSupplierParty.ElectronicAddressSellerBuyer <> '' then
+    with AddChild('cbc:EndpointID') do
+    begin
+      Attributes['schemeID'] := 'EM';
+      Text := _Invoice.AccountingSupplierParty.ElectronicAddressSellerBuyer;
+    end;
     if _Invoice.AccountingSupplierParty.IdentifierSellerBuyer <> '' then
     with AddChild('cac:PartyIdentification') do
     begin
@@ -1263,6 +1291,12 @@ begin
 
   with xRoot.AddChild('cac:AccountingCustomerParty').AddChild('cac:Party') do
   begin
+    if _Invoice.AccountingCustomerParty.ElectronicAddressSellerBuyer <> '' then
+    with AddChild('cbc:EndpointID') do
+    begin
+      Attributes['schemeID'] := 'EM';
+      Text := _Invoice.AccountingCustomerParty.ElectronicAddressSellerBuyer;
+    end;
     if _Invoice.AccountingCustomerParty.IdentifierSellerBuyer <> '' then
     with AddChild('cac:PartyIdentification') do
     begin
@@ -1364,7 +1398,7 @@ begin
            TXRechnungHelper.FloatToStr(_Invoice.PaymentTermCashDiscount1Percent)])+
           IfThen(_Invoice.PaymentTermCashDiscount1Base <> 0,'BASISBETRAG='+
             TXRechnungHelper.AmountToStr(_Invoice.PaymentTermCashDiscount1Base)+'#','')+
-          IfThen(_Version = XRechnungVersion_220_UBL,#13#10,'');
+          IfThen(_Version in [XRechnungVersion_220_UBL,XRechnungVersion_230_UBL],#13#10,'');
       end;
     iptt_CashDiscount2:
     begin
@@ -1381,7 +1415,7 @@ begin
            TXRechnungHelper.FloatToStr(_Invoice.PaymentTermCashDiscount2Percent)])+
           IfThen(_Invoice.PaymentTermCashDiscount2Base <> 0,'BASISBETRAG='+
             TXRechnungHelper.AmountToStr(_Invoice.PaymentTermCashDiscount2Base)+'#','')+
-          IfThen(_Version = XRechnungVersion_220_UBL,#13#10,'');
+          IfThen(_Version in [XRechnungVersion_220_UBL,XRechnungVersion_230_UBL],#13#10,'');
       end;
     end;
   end;
@@ -1590,7 +1624,7 @@ begin
 
   xRoot.AddChild('rsm:ExchangedDocumentContext')
        .AddChild('ram:GuidelineSpecifiedDocumentContextParameter')
-       .AddChild('ram:ID').Text := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.2';
+       .AddChild('ram:ID').Text := 'urn:cen.eu:en16931:2017#compliant#urn:xoev-de:kosit:standard:xrechnung_2.3';
 
   with xRoot.AddChild('rsm:ExchangedDocument') do
   begin
@@ -1620,6 +1654,7 @@ begin
 
       with AddChild('ram:SellerTradeParty') do
       begin
+        //TODO if _Invoice.AccountingSupplierParty.ElectronicAddressSellerBuyer <> ''
         if _Invoice.AccountingSupplierParty.IdentifierSellerBuyer <> '' then
           AddChild('ram:ID').Text := _Invoice.AccountingSupplierParty.IdentifierSellerBuyer;
         AddChild('ram:Name').Text := _Invoice.AccountingSupplierParty.RegistrationName;
@@ -1659,6 +1694,7 @@ begin
       end;
       with AddChild('ram:BuyerTradeParty') do
       begin
+        //TODO if _Invoice.AccountingCustomerParty.ElectronicAddressSellerBuyer <> ''
         if _Invoice.AccountingCustomerParty.IdentifierSellerBuyer <> '' then
           AddChild('ram:ID').Text := _Invoice.AccountingCustomerParty.IdentifierSellerBuyer;
         AddChild('ram:Name').Text := _Invoice.AccountingCustomerParty.RegistrationName;
@@ -2534,7 +2570,10 @@ begin
     if not TXRechnungXMLHelper.FindChild(_XML.DocumentElement,'cbc:CustomizationID',node) then
       exit;
     if node.Text.EndsWith('xrechnung_2.2',true) then
-      Result := XRechnungVersion_220_UBL;
+      Result := XRechnungVersion_220_UBL
+    else
+    if node.Text.EndsWith('xrechnung_2.3',true) then
+      Result := XRechnungVersion_230_UBL;
   end else
   if (SameText(_XML.DocumentElement.NodeName,'CrossIndustryInvoice') or SameText(_XML.DocumentElement.NodeName,'rsm:CrossIndustryInvoice')) then
   begin
@@ -2546,6 +2585,9 @@ begin
       exit;
     if node.Text.EndsWith('xrechnung_2.2',true) then
       Result := XRechnungVersion_220_UNCEFACT
+    else
+    if node.Text.EndsWith('xrechnung_2.3',true) then
+      Result := XRechnungVersion_230_UNCEFACT
     else
     if node.Text.StartsWith('urn:cen.eu:en16931:2017',true) then
       Result := XRechnungVersion_ReadingSupport_ZUGFeRDFacturX_2xx;
