@@ -2,9 +2,45 @@
 
 Das Skript installtools.ps1 mit PowerShell ausfuehren, um die Tools zu installieren bzw. zu aktualisieren.
 
+Dabei wird die JRE von AdoptOpenJDK genutzt. Fragen zur Lizenz von AdoptOpenJDK 
+finden Sie unter https://adoptium.net/de/docs/faq/ .
+
+Sollte bei der Ausführung des Skripts folgende Fehlermeldung erscheinen:
+
+    .\installtools.ps1 : Die Datei "C:\...\Distribution\installtools.ps1" kann nicht geladen werden, da die Ausführung von Skripts auf diesem System deaktiviert ist. Weitere Informationen finden Sie unter
+    "about_Execution_Policies" (https:/go.microsoft.com/fwlink/?LinkID=135170).
+    In Zeile:1 Zeichen:1
+    + .\installtools.ps1
+    + ~~~~~~~~~~~~~~~~~~
+        + CategoryInfo          : Sicherheitsfehler: (:) [], PSSecurityException
+        + FullyQualifiedErrorId : UnauthorizedAccess
+
+Dann bitte folgende Schritte durhführen:
+
+ - Drücke die [Windows]-Taste und tippe dann PowerShell ein.
+ - Führe es als Administrator aus.
+ - Kopiere und füge den folgenden Befehl ein und drücke [Enter]:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope LocalMachine
+```
+ - Schließe PowerShell und versuche es erneut.
+
 ## Historie
 
-12.05.2023 Update\
+- 21.02.2024 Update\
+  https://github.com/itplr-kosit/validator-configuration-xrechnung/releases/download/release-2024-06-20/validator-configuration-xrechnung_3.0.2_2024-06-20.zip\
+  https://github.com/itplr-kosit/xrechnung-visualization/releases/download/v2024-06-20/xrechnung-3.0.2-xrechnung-visualization-2024-06-20.zip
+
+- 16.11.2023 Update\
+  https://github.com/itplr-kosit/xrechnung-visualization/releases/tag/v2023-11-15\
+  https://github.com/itplr-kosit/validator-configuration-xrechnung/releases/tag/release-2023-11-15\
+
+- 22.09.2023 Update\
+  xrechnung-3.0.1-xrechnung-visualization-2023-09-22.zip\
+  validator-configuration-xrechnung_3.0.1_2023-09-22.zip
+
+- 12.05.2023 Update\
   validator-configuration-xrechnung_2.3.1_2023-05-12.zip\
   xrechnung-2.3.1-xrechnung-visualization-2023-05-12.zip
 
@@ -48,7 +84,7 @@ https://github.com/itplr-kosit/validator-configuration-xrechnung
 
 https://github.com/itplr-kosit/xrechnung-visualization
 
-https://adoptopenjdk.net
+https://adoptium.net/de/
 
 https://xmlgraphics.apache.org/fop/2.8/running.html
 

@@ -7,34 +7,74 @@ Erstellen von Rechnungen im
 - XRechnung-UBL-Format (Universal Business Language)
 - XRechnung-CII-Format (Cross Industrie Invoice)
 
-## TODO
-
-UBL-CR-646 A UBL invoice should not include the InvoiceLine SubInvoiceLine
-
-https://github.com/itplr-kosit/validator-configuration-xrechnung/issues/36
-
-False positive validation warning [BR-DEX-02] when using SubInvoiceLine and AllowanceCharge.
-Die Warnung existiert immer noch.
-
-https://github.com/itplr-kosit/validator-configuration-xrechnung/issues/41
-
 ## Version
 
-Aktuelle XRechnung-Version
+Aktuelle XRechnung-Versionen
 
+- 3.0.1 gültig ab 1.2.2024 - Übersicht der Pflichtfelder unter https://blog.seeburger.com/de/xrechnung-version-3-0-1-gueltig-ab-01-februar-2024/
 - 2.3.1 gültig ab 1.8.2023
 
+## Beispiele
+
+Zu finden unter Samples\XRechnungUnit2TestCases.pas
+
+## ZUGFeRD Support
+
+Um den Import von ZUGFeRD-Rechnungen zu ermöglichen, wurde die 
+Bibliothek ZUGFeRD-for-Delphi integriert. Die Quellen hier zu finden:
+
+https://github.com/LandrixSoftware/ZUGFeRD-for-Delphi
+
+Aktivieren Sie dazu auch in der Unit intf.XRechnung.pas den Compiler-Schalter ZUGFeRD_Support.
+
+```delphi
+{$DEFINE ZUGFeRD_Support}
+```
+Ebenso steht zusätzlich eine Klasse TZUGFeRDAdditionalContent zur Verfügung, um weitere ZUGFeRD-Profil-Inhalte zu laden, die nicht vom XRechnungs-Profil unterstützt werden, z.B. die abweichende Rechnungsanschrift. Eine Instanz dieser Klasse kann man optional an die Methode TXRechnungInvoiceAdapter.LoadFrom...() übergeben. Nicht implementierte Werte bitte selbst ergänzen oder anfragen.
+
+```delphi
+  TZUGFeRDAdditionalContent = class
+  public
+    InvoiceeTradePartyFound : Boolean;
+    InvoiceeTradeParty : TInvoiceAccountingParty;
+  end;
+```
+
+## Hilfsfunktion für den XRechnung-Export
+
+Prüft, ob die zu exportierende Rechnung den Anforderungen der XRechnung entspricht. Gibt False zurück, wenn die Rechnung Werte enthält, die nicht im XRechnung-Profil erlaubt sind. Die Funktion ist nicht vollständig und wird ständig erweitert.
+
+```delphi
+unit intf.XRechnung;
+
+TXRechnungInvoiceAdapter.ConsistencyCheck(_Invoice : TInvoice; _Version : TXRechnungVersion) : Boolean;
+```
 ## Weitere Informationen zu XRechnung
 
-https://www.verband-e-rechnung.org/xrechnung/
+- UBL-Format
+     https://docs.peppol.eu/poacc/billing/3.0/syntax/ubl-invoice
 
-https://xeinkauf.de/
+- CII-Format
+  https://portal3.gefeg.com/invoice/tthome/index/617afdc4-623f-44e0-a05b-5b878840e508
 
-https://xeinkauf.de/xrechnung/versionen-und-bundles/
+- Validieren von XRechnung
+  https://ecosio.com/de/peppol-und-xml-dokumente-online-validieren/
 
-https://github.com/itplr-kosit
+- https://portal3.gefeg.com/projectdata/invoice/deliverables/installed/publishingproject/factur-x%20(zugferd%202.0)/factur-x;%20draft;%20extended.scm/html/021.htm?https://portal3.gefeg.com/projectdata/invoice/deliverables/installed/publishingproject/factur-x%20(zugferd%202.0)/factur-x;%20draft;%20extended.scm/html/02233.htm
 
-https://cranesoftwrights.github.io/resources/Crane-UBL-2.2-Skeleton/Crane-UBL-Invoice-2.2.html#result
+- https://www.verband-e-rechnung.org/xrechnung/
+
+- https://xeinkauf.de/
+
+- https://xeinkauf.de/xrechnung/versionen-und-bundles/
+
+- https://github.com/itplr-kosit
+
+- https://cranesoftwrights.github.io/resources/Crane-UBL-2.2-Skeleton/Crane-UBL-Invoice-2.2.html#result
+
+- https://www.e-rechnung-bund.de/wp-content/uploads/2023/04/Uebersichtslisten-Eingabefelder-OZG-RE.pdf
+
+- https://www.deutschebahn.com/en/invoicing-6930178#collapse6130808
 
 # Lizenz / License
 

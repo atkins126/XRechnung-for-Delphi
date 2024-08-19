@@ -1,8 +1,8 @@
 object Form1: TForm1
   Left = 0
   Top = 0
-  Caption = 'XRechnung for Delphi v2.3.1'
-  ClientHeight = 695
+  Caption = 'XRechnung for Delphi v3.0.x'
+  ClientHeight = 714
   ClientWidth = 1605
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -14,25 +14,18 @@ object Form1: TForm1
   OnCreate = FormCreate
   DesignSize = (
     1605
-    695)
+    714)
   TextHeight = 13
-  object Label2: TLabel
-    Left = 144
-    Top = 10
-    Width = 83
-    Height = 13
-    Caption = 'XRechnung 2.3.1'
-  end
   object Label3: TLabel
     Left = 8
-    Top = 309
+    Top = 392
     Width = 82
     Height = 13
     Caption = 'Weitere Beispiele'
   end
   object btCreateInvoice: TButton
     Left = 8
-    Top = 264
+    Top = 347
     Width = 129
     Height = 25
     Caption = 'Erzeugen'
@@ -41,17 +34,17 @@ object Form1: TForm1
   end
   object Memo2: TMemo
     Left = 144
-    Top = 29
+    Top = 8
     Width = 649
-    Height = 476
+    Height = 516
     Anchors = [akLeft, akTop, akBottom]
     ScrollBars = ssBoth
     TabOrder = 1
   end
   object Memo3: TMemo
     Left = 144
-    Top = 511
-    Width = 1440
+    Top = 530
+    Width = 1453
     Height = 169
     Anchors = [akLeft, akRight, akBottom]
     ScrollBars = ssBoth
@@ -59,7 +52,7 @@ object Form1: TForm1
   end
   object rbPaymentTerms: TRadioGroup
     Left = 8
-    Top = 67
+    Top = 150
     Width = 129
     Height = 99
     Caption = 'Zahlungsbedingungen'
@@ -73,68 +66,39 @@ object Form1: TForm1
   end
   object cbAllowanceCharges: TCheckBox
     Left = 8
-    Top = 172
+    Top = 255
     Width = 138
     Height = 17
     Caption = 'Nachlaesse/Zuschlaege'
     TabOrder = 4
   end
-  object Button4: TButton
-    Left = 8
-    Top = 335
-    Width = 129
-    Height = 25
-    Caption = 'Titel / Positionsgruppen'
-    TabOrder = 5
-    OnClick = Button4Click
-  end
   object cbPrepaidAmount: TCheckBox
     Left = 8
-    Top = 195
+    Top = 278
     Width = 129
     Height = 17
     Caption = 'Abschlagsrechnungen'
-    TabOrder = 6
-  end
-  object btX2ConvertHTML: TButton
-    Left = 624
-    Top = 444
-    Width = 137
-    Height = 33
-    Anchors = [akLeft, akBottom]
-    Caption = 'XRechnung nach HTML'
-    TabOrder = 7
-    Visible = False
-    OnClick = btX2ConvertHTMLClick
-  end
-  object Button1: TButton
-    Left = 8
-    Top = 366
-    Width = 129
-    Height = 25
-    Caption = 'UStG '#167' 13b'
-    TabOrder = 8
-    OnClick = Button1Click
+    TabOrder = 5
   end
   object cbAttachments: TCheckBox
     Left = 8
-    Top = 218
+    Top = 301
     Width = 97
     Height = 17
     Caption = 'Mit Anhaengen'
-    TabOrder = 9
+    TabOrder = 6
   end
   object cbDeliveriyInf: TCheckBox
     Left = 8
-    Top = 241
+    Top = 324
     Width = 97
     Height = 17
     Caption = 'Lieferanschrift'
-    TabOrder = 10
+    TabOrder = 7
   end
   object rbFormat: TRadioGroup
     Left = 8
-    Top = 8
+    Top = 32
     Width = 129
     Height = 53
     Caption = 'Ausgabeformat'
@@ -142,55 +106,112 @@ object Form1: TForm1
     Items.Strings = (
       'UBL'
       'ZUGFeRD')
-    TabOrder = 11
+    TabOrder = 8
   end
   object Button2: TButton
     Left = 8
-    Top = 500
+    Top = 585
     Width = 129
     Height = 25
     Caption = 'Datei laden'
-    TabOrder = 12
+    TabOrder = 9
     OnClick = Button2Click
-  end
-  object Panel1: TPanel
-    Left = 808
-    Top = 29
-    Width = 777
-    Height = 476
-    Anchors = [akLeft, akTop, akRight, akBottom]
-    TabOrder = 13
-    object WebBrowser2: TWebBrowser
-      Left = 1
-      Top = 1
-      Width = 775
-      Height = 474
-      Align = alClient
-      TabOrder = 0
-      ControlData = {
-        4C00000019500000FD3000000000000000000000000000000000000000000000
-        000000004C000000000000000000000001000000E0D057007335CF11AE690800
-        2B2E126208000000000000004C0000000114020000000000C000000000000046
-        8000000000000000000000000000000000000000000000000000000000000000
-        00000000000000000100000000000000000000000000000000000000}
-    end
   end
   object Button3: TButton
     Left = 8
-    Top = 624
+    Top = 616
     Width = 130
     Height = 25
     Caption = 'XRechnung validieren'
-    TabOrder = 14
+    TabOrder = 10
     OnClick = Button3Click
   end
   object Button5: TButton
     Left = 8
-    Top = 655
+    Top = 647
     Width = 130
     Height = 25
-    Caption = 'XRechnung visualisieren'
-    TabOrder = 15
+    Caption = 'XRechnung als HTML'
+    TabOrder = 11
     OnClick = Button5Click
+  end
+  object Button6: TButton
+    Left = 8
+    Top = 678
+    Width = 130
+    Height = 25
+    Caption = 'XRechnung als PDF'
+    TabOrder = 12
+    OnClick = Button6Click
+  end
+  object rbVersion: TRadioGroup
+    Left = 8
+    Top = 91
+    Width = 129
+    Height = 53
+    Caption = 'Ausgabeversion'
+    ItemIndex = 1
+    Items.Strings = (
+      '2.3.1'
+      '3.0.1')
+    TabOrder = 13
+    OnClick = rbVersionClick
+  end
+  object PageControl1: TPageControl
+    Left = 799
+    Top = 8
+    Width = 798
+    Height = 516
+    ActivePage = TabSheet1
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    TabOrder = 14
+    object TabSheet1: TTabSheet
+      Caption = 'Pr'#252'fprotokoll'
+    end
+    object TabSheet2: TTabSheet
+      Caption = 'HTML'
+      ImageIndex = 1
+    end
+    object TabSheet3: TTabSheet
+      Caption = 'PDF'
+      ImageIndex = 2
+    end
+  end
+  object Button9: TButton
+    Left = 8
+    Top = 542
+    Width = 130
+    Height = 25
+    Caption = 'Erzeugen'
+    TabOrder = 15
+    OnClick = Button9Click
+  end
+  object ListBox1: TListBox
+    Left = 8
+    Top = 408
+    Width = 130
+    Height = 128
+    ItemHeight = 13
+    Items.Strings = (
+      'Kleinunternehmerregelung'
+      #167'13b UStG'
+      'Austauschteilesteuer'
+      'Differenzbesteuerung'
+      'Titel/Positionsgruppen'
+      'Gutschrift'
+      'Minimalrechnung B2B'
+      'Preiseinheit'
+      'Lastschrift')
+    TabOrder = 16
+  end
+  object cbValidateWithJava: TCheckBox
+    Left = 8
+    Top = 8
+    Width = 121
+    Height = 17
+    Caption = 'Validierung aktiv'
+    Checked = True
+    State = cbChecked
+    TabOrder = 17
   end
 end

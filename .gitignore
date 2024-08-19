@@ -26,16 +26,30 @@
 #*.obj
 #
 
-Documentation
+Documentation/*/*.zip
+Documentation/*/*.xml
+Documentation/*.txt
+Documentation/*.bat
+Documentation/*.rc
+Documentation/*.res
+Documentation/*.eml
+Documentation/*.md
+Documentation/More
 Samples/Win32
 Samples/Win64
 SaxonHE-Unmanaged
 Distribution/validator
-Distribution/validator-configuration
-Distribution/visualization
+Distribution/validator-configuration23x
+Distribution/validator-configuration30x
+Distribution/visualization23x
+Distribution/visualization30x
 Distribution/java
 Distribution/apache-fop
 Schema
+Testdata
+
+xrechnung-3.0.0-testsuite-2023-07-31
+Webservice via Peppol
 
 # Delphi compiler-generated binaries (safe to delete)
 *.exe
